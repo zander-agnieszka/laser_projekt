@@ -1,4 +1,4 @@
-#!/home/zander/laser_reinigung_monitor/.venv/bin/python
+#!/home/zander/laser_reinigung_monitor/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
