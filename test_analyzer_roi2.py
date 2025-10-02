@@ -1,30 +1,32 @@
-
+# test_analyzer_roi.py (Version mit Flächen- UND Positionsprüfung)
 import cv2
 import numpy as np
 import os
 
 # ===== KONFIGURATION (Diese Werte musst du anpassen!) =====
 
-# --- NEU: GIB HIER DEINE GEMESSENEN ROI-KOORDINATEN EIN ---
-ROI_Y_START = 1225 # wert: Obere Kante
-ROI_Y_END = 1475  # wert: Untere Kante
-ROI_X_START = 270  # wert: Linke Kante
-ROI_X_END = 650  # wert: Rechte Kante
+# --- ROI (Region of Interest) ---
+ROI_Y_START = 450
+ROI_Y_END = 550
+ROI_X_START = 850
+ROI_X_END = 1150
 
 # --- GEOMETRIE-PRÜFUNG ---
-# Nimm die Werte, die du mit dem hsv_calibrator gefunden hast
-LOWER_SILVER = np.array([0, 0, 127])
-UPPER_SILVER = np.array([114, 103, 255])
-
+# Deine kalibrierten Werte aus dem hsv_calibrator.py
+LOWER_SILVER = np.array([0, 0, 150])
+UPPER_SILVER = np.array([180, 50, 255])
 
 # Toleranzen für die Geometrie (Werte nach Kalibrierung eintragen)
-MIN_FLAECHE_CUTOUT = 63000  # mein berechneter Mindestwert
-MAX_FLAECHE_CUTOUT = 77500 # mein berechneter Maximalwert
+MIN_FLAECHE_CUTOUT = 770000  # Dein berechneter Mindestwert
+MAX_FLAECHE_CUTOUT = 945000  # Dein berechneter Maximalwert
 
 # NEU: Toleranzen für die Position des Mittelpunkts (relativ zum ROI)
-ERWARTETE_X_POS_ROI = 194   # Beispiel: Mittelpunkt sollte bei X=150 IM ROI liegen
-ERWARTETE_Y_POS_ROI = 126    # Beispiel: Mittelpunkt sollte bei Y=50 IM ROI liegen
+ERWARTETE_X_POS_ROI = 150   # Beispiel: Mittelpunkt sollte bei X=150 IM ROI liegen
+ERWARTETE_Y_POS_ROI = 50    # Beispiel: Mittelpunkt sollte bei Y=50 IM ROI liegen
 POS_TOLERANZ = 25           # +/- 25 Pixel Toleranz in X- und Y-Richtung
+
+# ... (Rest der Konfiguration für Sauberkeit bleibt gleich) ...
+
 # ====================================================================
 
 test_image_path = "Image/image_20250918_101441.jpg" # Passe den Pfad an
@@ -36,20 +38,15 @@ if image is None:
     print(f"FEHLER: Bild konnte nicht geladen werden unter {test_image_path}")
     exit()
 
-print(f"INFO: Dein Bild hat die Größe (Höhe, Breite): ({image.shape[0]}, {image.shape[1]})")    
-
-# ===== SCHRITT 1: BILD AUF ROI ZUSCHNEIDEN =====
-# erstelung eine saubere Kopie des ROI für die Analyse
+# Bild auf ROI zuschneiden
 roi = image[ROI_Y_START:ROI_Y_END, ROI_X_START:ROI_X_END].copy()
 if roi.size == 0:
     print(f"FEHLER: ROI ist leer. Überprüfe die ROI-Koordinaten!")
     exit()
 
-# erstelung eine weitere Kopie nur für die Anzeige, auf der wir malen können
 output_roi = roi.copy()
 hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
-# ===== SCHRITT 2: ANALYSE NUR INNERHALB DES ROI =====
 print("--- Starte Geometrie-Prüfung innerhalb des ROI ---")
 silver_mask = cv2.inRange(hsv_roi, LOWER_SILVER, UPPER_SILVER)
 contours, _ = cv2.findContours(silver_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -59,6 +56,8 @@ if not contours:
 else:
     cutout_contour = max(contours, key=cv2.contourArea)
     flaeche = cv2.contourArea(cutout_contour)
+    
+    # --- NEU: BERECHNUNG DES MITTELPUNKTS ---
     M = cv2.moments(cutout_contour)
     # Berechne den Mittelpunkt (cX, cY) der Kontur
     cX = int(M["m10"] / M["m00"]) if M["m00"] != 0 else 0
@@ -67,9 +66,10 @@ else:
     # Zeichne die gefundene Kontur (grün) und den Mittelpunkt (rot)
     cv2.drawContours(output_roi, [cutout_contour], -1, (0, 255, 0), 2)
     cv2.circle(output_roi, (cX, cY), 7, (0, 0, 255), -1)
+    
     print(f"-> Messung im ROI: Fläche={flaeche}, Mittelpunkt=(X:{cX}, Y:{cY})")
- 
-  # --- NEU: PRÜFUNG VON FLÄCHE UND POSITION ---
+    
+    # --- NEU: PRÜFUNG VON FLÄCHE UND POSITION ---
     flaeche_ok = MIN_FLAECHE_CUTOUT < flaeche < MAX_FLAECHE_CUTOUT
     x_pos_ok = abs(cX - ERWARTETE_X_POS_ROI) <= POS_TOLERANZ
     y_pos_ok = abs(cY - ERWARTETE_Y_POS_ROI) <= POS_TOLERANZ
@@ -82,21 +82,9 @@ else:
         print("✅ Geometrie bestanden.")
         # ... hier würde dann die Sauberkeitsprüfung folgen ...
 
-# ===== SCHRITT 3: VISUALISIERUNG DER ERGEBNISSE =====
-
-# --- NEUE VISUALISIERUNG: BILDER SPEICHERN ---
-print("\n--- Speichere Analyse-Bilder ---")
+# --- VISUALISIERUNG ---
+# ... (Speichern oder Anzeigen der Bilder) ...
 output_folder = "analyse_ergebnisse"
 os.makedirs(output_folder, exist_ok=True)
-
-# Speichere die wichtigen Analyse-Schritte als Bilder
-cv2.imwrite(os.path.join(output_folder, "1_roi_ausschnitt.jpg"), roi)
-cv2.imwrite(os.path.join(output_folder, "2_silber_erkennung_maske.jpg"), silver_mask)
-cv2.imwrite(os.path.join(output_folder, "3_gefundene_kontur_mit_mittelpunkt.jpg"), output_roi) 
-
-
-print(f"Ergebnisbilder wurden im Ordner '{output_folder}' gespeichert.")
-
-
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+cv2.imwrite(os.path.join(output_folder, "3_gefundene_kontur_mit_mittelpunkt.jpg"), output_roi)
+print(f"Analysebild wurde in '{output_folder}' gespeichert.")
