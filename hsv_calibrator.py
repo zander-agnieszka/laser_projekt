@@ -4,7 +4,7 @@ import numpy as np
 # --- KONFIGURATION ---
 # Gib hier den Pfad zu einem guten Testbild an, auf dem der silberne
 # Cut-Out klar zu sehen ist.
-IMAGE_PATH = "IO_Pictures/image_2025-08-12_11-04-51.jpg" 
+IMAGE_PATH = "Image/image_20250918_101327.jpg"
 # =====================
 
 def nothing(x):

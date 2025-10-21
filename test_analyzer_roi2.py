@@ -6,30 +6,30 @@ import os
 # ===== KONFIGURATION (Diese Werte musst du anpassen!) =====
 
 # --- ROI (Region of Interest) ---
-ROI_Y_START = 450
-ROI_Y_END = 550
-ROI_X_START = 850
-ROI_X_END = 1150
+ROI_Y_START = 1225
+ROI_Y_END = 1475
+ROI_X_START = 270
+ROI_X_END = 650
 
 # --- GEOMETRIE-PRÜFUNG ---
 # Deine kalibrierten Werte aus dem hsv_calibrator.py
-LOWER_SILVER = np.array([0, 0, 150])
-UPPER_SILVER = np.array([180, 50, 255])
+LOWER_SILVER = np.array([0, 0, 127])
+UPPER_SILVER = np.array([114, 103, 255])
 
 # Toleranzen für die Geometrie (Werte nach Kalibrierung eintragen)
-MIN_FLAECHE_CUTOUT = 770000  # Dein berechneter Mindestwert
-MAX_FLAECHE_CUTOUT = 945000  # Dein berechneter Maximalwert
+MIN_FLAECHE_CUTOUT = 63000  # Dein berechneter Mindestwert
+MAX_FLAECHE_CUTOUT = 77500  # Dein berechneter Maximalwert
 
 # NEU: Toleranzen für die Position des Mittelpunkts (relativ zum ROI)
-ERWARTETE_X_POS_ROI = 150   # Beispiel: Mittelpunkt sollte bei X=150 IM ROI liegen
-ERWARTETE_Y_POS_ROI = 50    # Beispiel: Mittelpunkt sollte bei Y=50 IM ROI liegen
+ERWARTETE_X_POS_ROI = 194  # Beispiel: Mittelpunkt sollte bei X=150 IM ROI liegen
+ERWARTETE_Y_POS_ROI = 126     # Beispiel: Mittelpunkt sollte bei Y=50 IM ROI liegen
 POS_TOLERANZ = 25           # +/- 25 Pixel Toleranz in X- und Y-Richtung
 
 # ... (Rest der Konfiguration für Sauberkeit bleibt gleich) ...
 
 # ====================================================================
 
-test_image_path = "Image/image_20250918_101441.jpg" # Passe den Pfad an
+test_image_path = "Image/image_20250918_100923.jpg" # Passe den Pfad an
 
 # --- Code-Beginn ---
 
