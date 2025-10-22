@@ -13,14 +13,18 @@ ROI_X_END = 650   # Dein Wert
 # --- GEOMETRIE-PRÜFUNG ---
 LOWER_SILVER = np.array([0, 0, 127]) # Dein kalibrierter Wert
 UPPER_SILVER = np.array([114, 103, 255]) # Dein kalibrierter Wert
+
+# Toleranzen für die Geometrie (Werte nach Kalibrierung eintragen)
 MIN_FLAECHE_CUTOUT = 63000
 MAX_FLAECHE_CUTOUT = 77500
+
+#Toleranzen für die Position des Mittelpunkts (relativ zum ROI)
 ERWARTETE_X_POS_ROI = 194 # Dein kalibrierter Wert
 ERWARTETE_Y_POS_ROI = 126 # Dein kalibrierter Wert
 POS_TOLERANZ = 30
 
 # --- SAUBERKEITS-PRÜFUNG ---
-# WICHTIG: Diese Werte musst du jetzt mit dem hsv_calibrator.py kalibrieren!
+# WICHTIG: Diese Werte mussen noch mal mit dem hsv_calibrator.py kalibrieret werden!
 LOWER_BLUE = np.array([80, 37, 45])
 UPPER_BLUE = np.array([130, 190, 153])
 ANTEIL_BLAU_FUER_IO = 0.01 # Weniger als 1% blaue Pixel = I.O.
@@ -29,9 +33,10 @@ ANTEIL_BLAU_FUER_IO = 0.01 # Weniger als 1% blaue Pixel = I.O.
 
 test_image_path = "Image/image_20250917_101430.jpg" # Ändere den Pfad!
 
-# --- Code-Beginn (bleibt fast gleich) ---
+# --- Code-Beginn  ---
+
 image = cv2.imread(test_image_path)
-# ... (ROI zuschneiden, etc. ... bleibt gleich) ...
+# ... (ROI zuschneiden) ...
 roi = image[ROI_Y_START:ROI_Y_END, ROI_X_START:ROI_X_END].copy()
 output_roi = roi.copy()
 hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
