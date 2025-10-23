@@ -4,8 +4,10 @@ import numpy as np
 # ===== KONFIGURATION (Nur für Geometrie) =====
 LOWER_SILVER = np.array([0, 0, 127])
 UPPER_SILVER = np.array([114, 103, 255])
+
 MIN_FLAECHE_CUTOUT = 63000
 MAX_FLAECHE_CUTOUT = 77500
+
 ERWARTETE_X_POS_ROI = 194
 ERWARTETE_Y_POS_ROI = 126
 POS_TOLERANZ = 30
@@ -21,7 +23,7 @@ def check_geometry(hsv_roi):
 
     if not contours:
         print("❌ Geometrie-Fehler: Kein Cut-Out gefunden.")
-        return False, None, None, None, silver_mask
+        return False, None, None, None
 
     cutout_contour = max(contours, key=cv2.contourArea)
     flaeche = cv2.contourArea(cutout_contour)
@@ -35,11 +37,11 @@ def check_geometry(hsv_roi):
 
     if not flaeche_ok:
         print(f"❌ Geometrie-Fehler: Fläche ({flaeche}) außerhalb der Toleranz.")
-        return False, cutout_contour, (cX, cY), flaeche, silver_mask
+        return False, cutout_contour, (cX, cY), flaeche
         
     if not pos_ok:
         print(f"❌ Geometrie-Fehler: Position (X:{cX}, Y:{cY}) außerhalb der Toleranz.")
-        return False, cutout_contour, (cX, cY), flaeche, silver_mask
+        return False, cutout_contour, (cX, cY), flaeche
 
     print(f"✅ Geometrie bestanden. (Fläche: {flaeche}, Position: (X:{cX}, Y:{cY}))")
-    return True, cutout_contour, (cX, cY), flaeche, silver_mask
+    return True, cutout_contour, (cX, cY), flaeche

@@ -1,58 +1,44 @@
-import cv2
+from flask import Flask, render_template, redirect
 import os
-from analysis.geometry_checker import check_geometry
-from analysis.cleanliness_checker import check_cleanliness
 
-# ===== HAUPT-KONFIGURATION =====
-ROI_Y_START = 1225
-ROI_Y_END = 1500
-ROI_X_START = 180
-ROI_X_END = 650
-TEST_IMAGE_PATH = "Image/image_20250917_101430.jpg"
-OUTPUT_FOLDER = "analyse_ergebnisse"
-# ===============================
+# Importiere deine "Experten"-Module
+from camera_handler import capture_image_after_cleaning
+from main_analyzer import run_full_analysis
 
-def run_full_analysis(image_path):
-    """
-    Hauptfunktion: Lädt ein Bild und steuert den gesamten zweistufigen Analyseprozess.
-    """
-    image = cv2.imread(image_path)
-    if image is None:
-        print(f"FEHLER: Bild konnte nicht geladen werden: {image_path}")
-        return
+# --- Flask App Initialisierung und Konfiguration der Pfade ---
+app = Flask(__name__)
 
-    # 1. Bild auf ROI zuschneiden
-    roi = image[ROI_Y_START:ROI_Y_END, ROI_X_START:ROI_X_END].copy()
-    hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+IMAGE_CAPTURE_FOLDER = "uploads"
+ANALYSIS_OUTPUT_FOLDER = os.path.join('static', 'analyse_ergebnisse')
 
-    # 2. Gate 1: Geometrie prüfen
-    geometry_ok, contour, center, area, silver_mask = check_geometry(hsv_roi)
+# --- Flask-Routen: Die Logik für die Webseite ---
+@app.route("/")
+def index():
+    """Zeigt die Startseite an."""
+    return render_template('index.html')
 
-    if not geometry_ok:
-        final_status = "nio"
-        mask_to_save = silver_mask
-    else:
-        # 3. Gate 2: Sauberkeit prüfen
-        final_status, mask_to_save = check_cleanliness(hsv_roi, contour, silver_mask)
+@app.route("/start_analysis")
+def start_analysis():
+    """Wird durch Klick auf den Button ausgelöst: Kamera -> Analyse -> Ergebnisseite."""
+    print("--- ANFORDERUNG VOM WEB-INTERFACE: Starte Analyseprozess ---")
     
-    print(f"\n--- ENDGÜLTIGER STATUS: {final_status.upper()} ---")
+    # Schritt 1: Kamera-Experten aufrufen
+    captured_image_path = capture_image_after_cleaning(folder_path=IMAGE_CAPTURE_FOLDER)
+    if captured_image_path is None:
+        return "<h1>FEHLER: Konnte kein Bild von der Kamera aufnehmen.</h1><a href='/'>Zurück</a>"
 
-    # 4. Visuelle Ergebnisse für die Dokumentation speichern
-    output_roi_image = roi.copy()
-    if contour is not None:
-        cv2.drawContours(output_roi_image, [contour], -1, (0, 255, 0), 2)
-        if center is not None:
-            cv2.circle(output_roi_image, center, 7, (0, 0, 255), -1)
+    # Schritt 2: Analyse-Experten aufrufen
+    final_status, result_images = run_full_analysis(captured_image_path, output_folder=ANALYSIS_OUTPUT_FOLDER)
+    if final_status is None:
+        return "<h1>FEHLER: Die Bildanalyse ist fehlgeschlagen.</h1><a href='/'>Zurück</a>"
+        
+    print(f"--- ANALYSE ABGESCHLOSSEN: Status ist {final_status.upper()} ---")
 
-    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-    cv2.imwrite(os.path.join(OUTPUT_FOLDER, "1_roi_ausschnitt.jpg"), roi)
-    cv2.imwrite(os.path.join(OUTPUT_FOLDER, "2_silber_erkennung.jpg"), silver_mask)
-    cv2.imwrite(os.path.join(OUTPUT_FOLDER, "3_kontur_und_mitte.jpg"), output_roi_image)
-    if final_status != "nio":
-         cv2.imwrite(os.path.join(OUTPUT_FOLDER, f"4_sauberkeit_{final_status}.jpg"), mask_to_save)
+    # Schritt 3: Ergebnisseite mit den Daten der Experten rendern
+    return render_template('result.html', status=final_status, images=result_images)
 
-    print(f"Analysebilder wurden im Ordner '{OUTPUT_FOLDER}' gespeichert.")
-
-# ===== Skript starten =====
+# --- Startpunkt: Den Webserver starten ---
 if __name__ == "__main__":
-    run_full_analysis(TEST_IMAGE_PATH)
+    os.makedirs(IMAGE_CAPTURE_FOLDER, exist_ok=True)
+    os.makedirs(ANALYSIS_OUTPUT_FOLDER, exist_ok=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
