@@ -1,16 +1,20 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect 
 import os
 
 # Importiere deine "Experten"-Module
 from camera_handler import capture_image_after_cleaning
 from main_analyzer import run_full_analysis
 
+from laser_control import trigger_rework_laser
+
 # --- Flask App Initialisierung und Konfiguration der Pfade ---
 app = Flask(__name__)
 
 IMAGE_CAPTURE_FOLDER = "uploads"
 ANALYSIS_OUTPUT_FOLDER = os.path.join('static', 'analyse_ergebnisse')
-
+# Der Pfad zur .prn-Datei für die Nachbearbeitung, die du vorher
+# auf den Pi in einen 'jobs'-Ordner laden.'
+REWORK_PRN_FILE_PATH = "jobs/nacharbeit_standard.prn"  
 # --- Flask-Routen: Die Logik für die Webseite ---
 @app.route("/")
 def index():
@@ -28,14 +32,24 @@ def start_analysis():
         return "<h1>FEHLER: Konnte kein Bild von der Kamera aufnehmen.</h1><a href='/'>Zurück</a>"
 
     # Schritt 2: Analyse-Experten aufrufen
-    final_status, result_images = run_full_analysis(captured_image_path, output_folder=ANALYSIS_OUTPUT_FOLDER)
+    final_status, analysis_data = run_full_analysis(captured_image_path, output_folder=ANALYSIS_OUTPUT_FOLDER)
     if final_status is None:
         return "<h1>FEHLER: Die Bildanalyse ist fehlgeschlagen.</h1><a href='/'>Zurück</a>"
+    
+    if final_status == "nachbearbeitung":
+        # Wenn der Status "Nachbearbeitung" ist, löse den Laser-Job aus
+        laser_job_success = trigger_rework_laser(REWORK_PRN_FILE_PATH)
+        # Füge eine Information zum Ergebnis hinzu (optional, aber gut für die Anzeige)
+        analysis_data['laser_triggered'] = laser_job_success
         
     print(f"--- ANALYSE ABGESCHLOSSEN: Status ist {final_status.upper()} ---")
 
+
+
     # Schritt 3: Ergebnisseite mit den Daten der Experten rendern
-    return render_template('result.html', status=final_status, images=result_images)
+    return render_template('result.html', status=final_status, data=analysis_data)
+
+
 
 # --- Startpunkt: Den Webserver starten ---
 if __name__ == "__main__":

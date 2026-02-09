@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <title>Analyse-Ergebnis</title>
     <style>
-        body { font-family: sans-serif; text-align: center; }
+        body { font-family: sans-serif; text-align: center; max-width: 900px; margin: auto; }
         .status-io { color: green; }
         .status-nio { color: red; }
         .status-nachbearbeitung { color: orange; }
         .image-container { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
-        .image-container img { border: 1px solid #ccc; max-width: 30%; height: auto; }
+        .image-container img { border: 1px solid #ccc; max-width: 45%; height: auto; }
         .image-container p { font-weight: bold; }
+        .details { text-align: left; margin-top: 30px; background-color: #f9f9f9; padding: 15px; border-radius: 5px; }
+        .details p { margin: 5px 0; }
+        .ok { color: green; }
+        .nok { color: red; }
     </style>
 </head>
 <body>
@@ -19,16 +23,56 @@
 
     <div class="image-container">
         <div>
-            <p>CUT-OUT mit Kontur</p>
-            <img src="{{ images.kontur_bild }}" alt="Kontur-Analyse">
+            <p>ROI mit Kontur</p>
+            <img src="{{ data.kontur_bild }}" alt="Kontur-Analyse">
         </div>
         <div>
-            <p>Maske Reste</p>
-            <img src="{{ images.masken_bild }}" alt="Masken-Analyse">
+            <p>Analyse-Maske</p>
+            <img src="{{ data.masken_bild }}" alt="Masken-Analyse">
         </div>
     </div>
 
+    <!-- HIER KOMMEN DIE NEUEN INFORMATIONEN HIN -->
+    <div class="details">
+        <h3>Analyse-Details:</h3>
+        
+        <p>
+            <b>Gate 1: Geometrie-Prüfung:</b> 
+            {% if data.geometry_passed %}
+                <span class="ok">Bestanden</span>
+            {% else %}
+                <span class="nok">Geometrie-Fehler</span>
+                </p>
+
+                 <ul>
+                    <li>Grund:  {{ data.error_reason }}</li>
+                
+                 </ul>
+
+            {% endif %}
+      </p>
+
+        <ul>
+            <li>Gemessene Fläche: {{ "%.0f"|format(data.gemessene_flaeche) }} Pixel</li>
+            <li>Gemessene Position (X, Y): {{ data.gemessene_position }}</li>
+        </ul>
+
+        {% if data.geometry_passed %}
+        <p>
+            <b>Gate 2: Sauberkeits-Prüfung:</b>
+            {% if status == 'io' %}
+                <span class="ok">Bestanden (sauber)</span>
+            {% else %}
+                <span class="nok">Unsauber (unsauber)</span>
+            {% endif %}
+        </p>
+        <ul>
+            <li>Anteil unsauberer Pixel: {{ "%.3f"|format(data.unsauberer_anteil_prozent) }} %</li>
+        </ul>
+        {% endif %}
+    </div>
+
     <br>
-    <a href="/">Zurück zur Startseite</a>
+    <a href="/">Neue Analyse starten</a>
 </body>
 </html>

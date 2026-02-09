@@ -1,10 +1,8 @@
 import cv2
 import numpy as np
+from analysis.geometry_checker import LOWER_SILVER, UPPER_SILVER
 
 # ===== KONFIGURATION (Nur für Sauberkeit) =====
-LOWER_SILVER = np.array([0, 0, 127])
-UPPER_SILVER = np.array([114, 103, 255])
-
 ANTEIL_NICHT_SILBER = 0.001 # 0,1% blaue Reste erlauben
 # =============================================
 
@@ -37,8 +35,8 @@ def check_cleanliness(hsv_roi, valid_cutout_contour, flaeche_cutout):
 
     if unsauberer_anteil < ANTEIL_NICHT_SILBER:
         print("-> Ergebnis Sauberkeit: Cut-Out ist sauber.")
-        return "io", unsaubere_reste_maske
+        return "io", unsaubere_reste_maske,unsauberer_anteil
     else:
         print("-> Ergebnis Sauberkeit: Reste gefunden (nicht-silber).")
-        return "nachbearbeitung", unsaubere_reste_maske
+        return "nachbearbeitung", unsaubere_reste_maske, unsauberer_anteil
 
